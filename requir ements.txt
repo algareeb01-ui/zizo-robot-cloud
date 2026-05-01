@@ -1,0 +1,5 @@
+fastapi
+uvicorn
+speechrecognition
+google-generativeai
+edge-tts
