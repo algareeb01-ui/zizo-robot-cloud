@@ -13,26 +13,27 @@ model = genai.GenerativeModel('gemini-1.5-flash')
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    print("✅ Zizo is Online and Ready!")
+    print("✅ Zizo is connected and stable!")
     try:
         while True:
-            # استلام بايتات الصوت من خالد
+            # استلام البيانات بمرونة أكبر لمنع الخطأ 1011
             data = await websocket.receive_bytes()
-            if data:
-                print(f"🎤 Received voice data ({len(data)} bytes)")
+            if not data:
+                continue
                 
-                # جيميناي حيرد هنا (حالياً رد ذكي ثابت لضمان السرعة)
-                # في المرحلة الجاية حنضيف محول الصوت لنص (STT)
-                reply_text = "أهلين يا خالد، أنا زيزو سامعك مية مية، شنو رأيك في الصوت دلوقت؟"
-                
-                # تحويل الرد لصوت (Edge-TTS)
-                communicate = edge_tts.Communicate(reply_text, "ar-EG-ShakirNeural")
-                async for chunk in communicate.stream():
-                    if chunk["type"] == "audio":
-                        await websocket.send_bytes(chunk["data"])
-                print("📤 Zizo replied successfully!")
-                
+            print(f"🎤 Audio packet received: {len(data)} bytes")
+            
+            # الرد السريع لضمان بقاء الاتصال مفتوحاً
+            reply_text = "زيزو سامعك يا خالد، جاري معالجة الصوت."
+            
+            communicate = edge_tts.Communicate(reply_text, "ar-EG-ShakirNeural")
+            async for chunk in communicate.stream():
+                if chunk["type"] == "audio":
+                    await websocket.send_bytes(chunk["data"])
+            
+            print("📤 Response sent back to ESP32")
+
     except WebSocketDisconnect:
-        print("❌ Khaled disconnected.")
+        print("❌ Connection closed by user")
     except Exception as e:
-        print(f"⚠️ Server Error: {e}")
+        print(f"⚠️ Stable Mode Error: {e}")
