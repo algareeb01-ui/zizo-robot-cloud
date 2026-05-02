@@ -1,35 +1,25 @@
 import os
 from fastapi import FastAPI, Request, Response
-import google.generativeai as genai
 import edge_tts
-import asyncio
 
 app = FastAPI()
 
-# إعداد جيميناي
-genai.configure(api_key="AIzaSyAndb93kuF75k1zomXXI5zJFNpba-5bQSM")
-model = genai.GenerativeModel('gemini-1.5-flash')
-
 @app.post("/talk")
-async def talk_to_zizo(request: Request):
+async def test_pipe(request: Request):
     try:
-        audio_data = await request.body()
-        if not audio_data or len(audio_data) < 100:
-            return Response(content="Audio too short", status_code=400)
-            
-        print(f"🎤 Received sound: {len(audio_data)} bytes")
+        # نص الاختبار اللي حيحوله السيرفر لصوت
+        test_text = "يا خالد، أنا زيزو، سماعاتك شغالة مية مية والصوت واصل من السحاب."
         
-        # رد زيزو الصافي
-        reply_text = "يا خالد، أنا زيزو سامعك دلوقت بوضوح من غير وشوشة، هل الجهاز استقر عندك؟"
-        
-        communicate = edge_tts.Communicate(reply_text, "ar-EG-ShakirNeural")
-        full_audio = b""
+        # تحويل النص لصوت (نقي جداً)
+        communicate = edge_tts.Communicate(test_text, "ar-EG-ShakirNeural")
+        audio_content = b""
         async for chunk in communicate.stream():
             if chunk["type"] == "audio":
-                full_audio += chunk["data"]
+                audio_content += chunk["data"]
         
-        return Response(content=full_audio, media_type="audio/mpeg")
+        print("📤 Sending Clean Test Audio...")
+        return Response(content=audio_content, media_type="audio/mpeg")
         
     except Exception as e:
         print(f"⚠️ Error: {e}")
-        return Response(content=str(e), status_code=500)
+        return Response(content="Error", status_code=500)
