@@ -6,34 +6,25 @@ import edge_tts
 
 app = FastAPI()
 
-# إعداد جيميناي
 genai.configure(api_key="AIzaSyAndb93kuF75k1zomXXI5zJFNpba-5bQSM")
 model = genai.GenerativeModel('gemini-1.5-flash')
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    print("✅ Connection Stable")
+    print("✅ Zizo Link Established")
     try:
         while True:
-            # استلام البيانات
             data = await websocket.receive_bytes()
-            if len(data) > 0:
-                print(f"🎤 Received chunk: {len(data)} bytes")
+            if data:
+                # رد صوتي مباشر بدون نص لتجنب لخبطة السماعة
+                text = "يا خالد أنا زيزو، سامعك مية مية والصوت دلوقت حيتحسن."
+                communicate = edge_tts.Communicate(text, "ar-EG-ShakirNeural")
                 
-                # رد سريع ومختصر لتقليل الضغط
-                reply_text = "أهلاً خالد، أنا سامعك."
-                
-                communicate = edge_tts.Communicate(reply_text, "ar-EG-ShakirNeural")
-                # تجميع الصوت وإرساله قطعة واحدة كبيرة
-                audio_data = b""
                 async for chunk in communicate.stream():
                     if chunk["type"] == "audio":
-                        audio_data += chunk["data"]
-                
-                if audio_data:
-                    await websocket.send_bytes(audio_data)
-                    print("📤 Full Audio Sent")
-                    
+                        # إرسال الصوت كبايتات خام
+                        await websocket.send_bytes(chunk["data"])
+                print("📤 Audio Stream Sent")
     except Exception as e:
-        print(f"⚠️ Socket Info: {e}")
+        print(f"⚠️ Connection Reset: {e}")
