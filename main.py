@@ -1,27 +1,25 @@
 import os
-from fastapi import FastAPI, Request, Response
-import google.generativeai as genai
+from fastapi import FastAPI, Response
 import edge_tts
 import io
+from pydub import AudioSegment
 
 app = FastAPI()
 
 @app.post("/talk")
-async def talk_to_zizo(request: Request):
-    try:
-        # نص الاختبار
-        test_text = "يا خالد، أنا زيزو. لو سامعني دلوقت بوضوح، يبقى الماسورة سلكت تمام."
-        
-        # تحويل النص لصوت
-        communicate = edge_tts.Communicate(test_text, "ar-EG-ShakirNeural")
-        
-        # هنا السر: حنخلي السيرفر يبعت البيانات بطريقة السماعة تفهمها
-        audio_data = b""
-        async for chunk in communicate.stream():
-            if chunk["type"] == "audio":
-                audio_data += chunk["data"]
-        
-        # إرسال البيانات
-        return Response(content=audio_data, media_type="audio/mpeg")
-    except Exception as e:
-        return Response(content=str(e), status_code=500)
+async def talk():
+    # النص اللي حنختبر بيه الماسورة
+    text = "يا خالد، أنا زيزو، دلوقت بكلمك بسرعة ستة عشر ألف هرتز، هل الصوت واضح؟"
+    
+    communicate = edge_tts.Communicate(text, "ar-EG-ShakirNeural")
+    mp3_data = b""
+    async for chunk in communicate.stream():
+        if chunk["type"] == "audio":
+            mp3_data += chunk["data"]
+            
+    # تحويل MP3 إلى PCM خام بسرعة 16000Hz
+    audio = AudioSegment.from_file(io.BytesIO(mp3_data), format="mp3")
+    audio = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
+    pcm_data = audio.raw_data
+    
+    return Response(content=pcm_data, media_type="application/octet-stream")
