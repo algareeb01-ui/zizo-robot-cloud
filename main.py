@@ -13,23 +13,31 @@ model = genai.GenerativeModel('gemini-1.5-flash')
 @app.post("/talk")
 async def talk_to_zizo(request: Request):
     try:
-        # استلام ملف الصوت بالكامل
+        # استلام البيانات كملف (Binary)
         audio_data = await request.body()
-        print(f"🎤 Received voice file: {len(audio_data)} bytes")
+        if not audio_data:
+            return Response(content="No data", status_code=400)
+            
+        print(f"🎤 Received voice data: {len(audio_data)} bytes")
         
-        # حالياً رد ثابت سريع للتجربة (وفي الخطوة الجاية نربط STT)
-        reply_text = "يا خالد، أنا زيزو. النظام ده ثابت دلوقت، هل سامعني بوضوح؟"
+        # رد زيزو (مرحلة التجربة الاستقرار)
+        reply_text = "أهلين يا خالد، أنا زيزو سامعك دلوقت عبر نظام بوست المستقر. كيف الصوت عندك؟"
         
-        # تحويل الرد لصوت
+        # تحويل النص لصوت
         communicate = edge_tts.Communicate(reply_text, "ar-EG-ShakirNeural")
         full_audio = b""
         async for chunk in communicate.stream():
             if chunk["type"] == "audio":
                 full_audio += chunk["data"]
         
-        print("📤 Sending full response back...")
+        print("📤 Sending audio response back to ESP32")
         return Response(content=full_audio, media_type="audio/mpeg")
         
     except Exception as e:
-        print(f"⚠️ Error: {e}")
-        return Response(content="Error", status_code=500)
+        print(f"⚠️ Server Error: {e}")
+        return Response(content=str(e), status_code=500)
+
+# نقطة فحص للسيرفر (اختياري)
+@app.get("/")
+async def root():
+    return {"status": "Zizo Server is Live on POST mode"}
