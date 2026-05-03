@@ -5,8 +5,8 @@ app = FastAPI()
 
 @app.get("/talk-wav")
 async def talk_wav():
-    text = "يا خالد، أنا زيزو، بنجرب الصوت الخام دلوقت."
-    # لاحظ هنا: طلبنا منه يطلع صوت خام (raw) وبجودة محددة
+    # دي الجملة اللي حنسمعها عشان نتأكد إن "القطر" وقف
+    text = "يا خالد، أنا زيزو، الصوت دلوقت صافي والقطر وقف في المحطة."
     communicate = edge_tts.Communicate(text, "ar-EG-ShakirNeural")
     
     audio_data = b""
@@ -14,5 +14,5 @@ async def talk_wav():
         if chunk["type"] == "audio":
             audio_data += chunk["data"]
             
-    # بنرسلها كبيانات ثنائية خام
+    # بنرسل البيانات بصيغة Octet-Stream يعني "بيانات خام" للسماعة
     return Response(content=audio_data, media_type="application/octet-stream")
