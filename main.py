@@ -1,12 +1,12 @@
 from fastapi import FastAPI, Response
 import edge_tts
-import io
 
 app = FastAPI()
 
 @app.get("/talk-wav")
 async def talk_wav():
-    text = "يا خالد، أنا زيزو، القطر وقف في المحطة دلوقت."
+    text = "يا خالد، أنا زيزو، بنجرب الصوت الخام دلوقت."
+    # لاحظ هنا: طلبنا منه يطلع صوت خام (raw) وبجودة محددة
     communicate = edge_tts.Communicate(text, "ar-EG-ShakirNeural")
     
     audio_data = b""
@@ -14,5 +14,5 @@ async def talk_wav():
         if chunk["type"] == "audio":
             audio_data += chunk["data"]
             
-    # بنرسل البيانات زي ما هي، بس في الأردوينو حنغير "السرعة"
-    return Response(content=audio_data, media_type="audio/mpeg")
+    # بنرسلها كبيانات ثنائية خام
+    return Response(content=audio_data, media_type="application/octet-stream")
