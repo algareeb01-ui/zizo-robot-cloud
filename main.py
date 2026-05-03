@@ -1,19 +1,22 @@
-from fastapi import FastAPI
-from fastapi.responses import StreamingResponse
-import httpx
+from fastapi import FastAPI, Response
+import edge_tts
+import io
+import wave
 
 app = FastAPI()
 
-# رابط إذاعة إخبارية (كلام فقط)
-RADIO_URL = "http://stream.live.vc.bbcmedia.co.uk/bbc_arabic_radio"
-
-@app.get("/radio")
-async def stream_radio():
-    client = httpx.AsyncClient()
+@app.get("/talk-wav")
+async def talk_wav():
+    text = "يا خالد، أنا زيزو، بنجرب التنسيق الصافي دلوقت."
+    communicate = edge_tts.Communicate(text, "ar-EG-ShakirNeural")
     
-    async def event_generator():
-        async with client.stream("GET", RADIO_URL) as r:
-            async for chunk in r.aiter_bytes():
-                yield chunk
-
-    return StreamingResponse(event_generator(), media_type="audio/mpeg")
+    # استلام الـ MP3 في الذاكرة
+    mp3_data = b""
+    async for chunk in communicate.stream():
+        if chunk["type"] == "audio":
+            mp3_data += chunk["data"]
+            
+    # هنا التريك: بنرسل البيانات دي للأردوينو
+    # وعشان نتفادى مشاكل التشفير، حنرسل الـ bytes مباشرة 
+    # بس بنظام chunking عشان الأردوينو ما يغرق
+    return Response(content=mp3_data, media_type="audio/mpeg")
